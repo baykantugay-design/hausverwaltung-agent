@@ -247,7 +247,11 @@ async function callClaude(system, user, maxTokens=1000) {
   const data = await res.json();
   if(data.error) throw new Error(typeof data.error==='object' ? data.error.message : data.error);
   const raw = data.content?.map(b=>b.text||'').join('') || '';
-  return JSON.parse(raw.replace(/```json|```/g,'').trim());
+  const cleaned = raw.replace(/```json|```/g,'').trim();
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+  if(firstBrace === -1 || lastBrace === -1) throw new Error('Ungültige Antwort vom Server');
+  return JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
 }
 
 // EMAIL GENERATE
@@ -408,7 +412,7 @@ async function generateAngebot() {
     const r = await callClaude(
       `Du bist Experte für Hausverwaltungsverträge. Erstelle ein professionelles Angebotsdokument auf Deutsch.\nAntworte NUR mit JSON ohne Backticks: {"titel":"...","zusammenfassung":"...","leistungen":["..."],"preis":"...","naechsteSchritte":["..."],"fazit":"..."}\nErstelle ein vollständiges überzeugendes Angebot.`,
       `Erstelle Angebot basierend auf:\n${daten||'Basis-Hausverwaltungspaket'}`,
-      1500
+      2000
     );
     angebotResult = r;
 
