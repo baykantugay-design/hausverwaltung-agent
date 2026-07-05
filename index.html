@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0f172a">
+<title>Hausverwaltungs-Agent</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8fafc;color:#0f172a}
+input,select,textarea,button{font-family:inherit}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin .7s linear infinite}
+
+/* Layout */
+.app{min-height:100vh;background:#f8fafc}
+.header{background:#0f172a;padding:13px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100}
+.logo{width:34px;height:34px;border:2px solid #c49a1a;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#c49a1a;font-weight:800;font-size:16px;flex-shrink:0}
+.header-text-main{color:#fff;font-weight:700;font-size:15px;line-height:1.2}
+.header-text-sub{color:#94a3b8;font-size:11px}
+.beta{margin-left:auto;font-size:10px;font-weight:700;background:rgba(196,154,26,0.15);color:#c49a1a;padding:3px 9px;border-radius:20px;border:1px solid rgba(196,154,26,0.3);text-transform:uppercase;letter-spacing:0.05em;flex-shrink:0}
+.tabs{display:grid;grid-template-columns:1fr 1fr;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:60px;z-index:99}
+.tab-btn{padding:12px 8px;border:none;background:none;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:color 0.15s}
+.tab-btn.active{color:#0f172a;border-bottom:2px solid #c49a1a}
+.tab-btn.inactive{color:#94a3b8;border-bottom:2px solid transparent}
+.content{padding:16px 16px 100px;display:flex;flex-direction:column;gap:16px}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;margin-bottom:0}
+.sec-head{padding:13px 16px;border-bottom:1px solid #e2e8f0;font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.07em;display:flex;align-items:center;gap:8px}
+.card-body{padding:16px;display:flex;flex-direction:column;gap:14px}
+.field-label{display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.06em}
+.field-input{width:100%;padding:10px 13px;border:1px solid #e2e8f0;border-radius:10px;font-size:15px;color:#0f172a;background:#f8fafc;outline:none;-webkit-appearance:none;box-sizing:border-box;font-family:inherit}
+.field-input:focus{border-color:#c49a1a;background:#fff}
+textarea.field-input{resize:vertical;min-height:70px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:7px 13px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;user-select:none;transition:all 0.15s;border:1px solid #e2e8f0;background:#f8fafc;color:#475569}
+.chip.active{border-color:#c49a1a;background:#fefce8;color:#c49a1a}
+.primary-btn{width:100%;padding:13px;background:#0f172a;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit}
+.primary-btn.gold{background:#c49a1a}
+.primary-btn:disabled{background:#94a3b8;cursor:not-allowed}
+.error-box{background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:14px;color:#dc2626;font-size:14px}
+.copy-btn{margin-left:auto;padding:4px 12px;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;font-size:12px;font-weight:600;color:#475569;cursor:pointer;font-family:inherit}
+.copy-btn.done{border-color:#166534;background:#dcfce7;color:#166534}
+.badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:0.05em}
+.badge-blue{background:#dbeafe;color:#1e40af;border:1px solid #93c5fd}
+.badge-gold{background:#fefce8;color:#c49a1a;border:1px solid #fde68a}
+.badge-red{background:#fee2e2;color:#dc2626;border:1px solid #fca5a5}
+.result-betreff-label{font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px}
+.result-betreff{font-size:16px;font-weight:700;color:#0f172a;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid #e2e8f0;line-height:1.4}
+.result-body{font-size:15px;line-height:1.85;color:#334155;white-space:pre-wrap}
+.loading-center{text-align:center;padding:40px;color:#94a3b8}
+.spinner-lg{width:32px;height:32px;border:3px solid #e2e8f0;border-top-color:#c49a1a;border-radius:50%;margin:0 auto 12px}
+/* Angebot */
+.progress-card{padding:16px;background:#fff;border:1px solid #e2e8f0;border-radius:16px}
+.progress-bar-wrap{height:8px;background:#e2e8f0;border-radius:8px;overflow:hidden;margin:10px 0 8px}
+.progress-bar-fill{height:100%;border-radius:8px;transition:width 0.4s}
+.kachel-head{padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer}
+.kachel-icon{width:42px;height:42px;border-radius:10px;flex-shrink:0;font-size:20px;display:flex;align-items:center;justify-content:center}
+.kachel-mini-bar{flex:1;height:4px;background:#e2e8f0;border-radius:4px;overflow:hidden}
+.kachel-mini-fill{height:100%;border-radius:4px;transition:width 0.3s}
+.kachel-body{border-top:1px solid #e2e8f0}
+.kachel-info{padding:10px 16px;background:#f8fafc;font-size:12px;color:#475569;border-bottom:1px solid #e2e8f0}
+.kachel-fields{padding:4px 16px 12px}
+.field-row{display:flex;align-items:center;gap:12px;padding:12px 0;cursor:pointer}
+.checkbox{width:24px;height:24px;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.angebot-section{background:#f8fafc;border-radius:10px;padding:14px;border:1px solid #e2e8f0;margin-bottom:14px}
+.angebot-gold{background:#fefce8;border:1px solid #fde68a}
+.angebot-blue{background:#dbeafe;border:1px solid #93c5fd}
+.step-num{width:22px;height:22px;border-radius:50%;background:#0f172a;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">H</div>
+  <div>
+    <div class="header-text-main">Hausverwaltungs-Agent</div>
+    <div class="header-text-sub">KI-gestützt · Professionell</div>
+  </div>
+  <div class="beta">Beta</div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab-btn active" id="tab-email" onclick="switchTab('email')">✉️ E-Mail Agent</button>
+  <button class="tab-btn inactive" id="tab-angebot" onclick="switchTab('angebot')">📄 Angebotserstellung</button>
+</div>
+
+<!-- EMAIL TAB -->
+<div id="page-email" class="content">
+  <div class="card">
+    <div class="sec-head">👤 Kundendaten eingeben</div>
+    <div class="card-body">
+      <div>
+        <label class="field-label">Name des Kunden</label>
+        <input class="field-input" id="e-name" type="text" placeholder="z. B. Herr Müller">
+      </div>
+      <div>
+        <label class="field-label">Kundentyp</label>
+        <select class="field-input" id="e-typ">
+          <option>Privatvermieter</option>
+          <option>Eigentümergemeinschaft (WEG)</option>
+          <option>Kapitalanleger / Investor</option>
+          <option>Erstkäufer / Erstvermietung</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Anzahl Einheiten</label>
+        <select class="field-input" id="e-einheiten">
+          <option>1–3 Einheiten</option>
+          <option>4–10 Einheiten</option>
+          <option>11–30 Einheiten</option>
+          <option>mehr als 30 Einheiten</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Hauptproblem</label>
+        <div class="chips" id="chips-wrap">
+          <div class="chip active" data-val="zu viel Verwaltungsaufwand" onclick="toggleChip(this)">⏱ Zeitaufwand</div>
+          <div class="chip" data-val="rechtliche Unsicherheit" onclick="toggleChip(this)">⚖️ Rechtsfragen</div>
+          <div class="chip" data-val="Mieterprobleme" onclick="toggleChip(this)">🏠 Mieterprobleme</div>
+          <div class="chip" data-val="schlechte Rendite" onclick="toggleChip(this)">📉 Rendite</div>
+          <div class="chip" data-val="Leerstand" onclick="toggleChip(this)">🔑 Leerstand</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <label class="field-label">Ton</label>
+          <select class="field-input" id="e-ton">
+            <option value="freundlich-professionell">Freundlich</option>
+            <option value="formell und seriös">Formell</option>
+            <option value="direkt und lösungsorientiert">Direkt</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Länge</label>
+          <select class="field-input" id="e-laenge">
+            <option value="kurz (ca. 120 Wörter)">Kurz</option>
+            <option value="mittel (ca. 250 Wörter)" selected>Mittel</option>
+            <option value="ausführlich (ca. 400 Wörter)">Lang</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="field-label">Hinweise <span style="font-weight:400;text-transform:none">(optional)</span></label>
+        <textarea class="field-input" id="e-hinweise" placeholder="z. B. kostenlose Erstberatung erwähnen…"></textarea>
+      </div>
+      <button class="primary-btn" id="email-btn" onclick="generateEmail()">✉️ Angebot generieren</button>
+    </div>
+  </div>
+
+  <div class="card" id="email-result" style="display:none">
+    <div class="sec-head">
+      📧 Generierte E-Mail
+      <button class="copy-btn" id="copy-email-btn" onclick="copyEmail()">Kopieren</button>
+    </div>
+    <div class="card-body" id="email-result-body"></div>
+  </div>
+</div>
+
+<!-- ANGEBOT TAB -->
+<div id="page-angebot" class="content" style="display:none">
+
+  <!-- Progress -->
+  <div class="progress-card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:13px;font-weight:600;color:#475569">Vollständigkeit</span>
+      <span style="font-size:24px;font-weight:800;color:#c49a1a" id="pct-label">0%</span>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progress-fill" style="width:0%;background:#c49a1a"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between">
+      <span style="font-size:12px;color:#94a3b8" id="pct-detail">0 von 35 Feldern</span>
+      <span style="font-size:12px;font-weight:600" id="pflicht-status" style="color:#dc2626">⚠ Pflichtfelder fehlen</span>
+    </div>
+  </div>
+
+  <!-- Kacheln werden per JS eingefügt -->
+  <div id="kacheln-container"></div>
+
+  <div class="card">
+    <div class="card-body">
+      <p style="font-size:13px;color:#475569;line-height:1.6" id="angebot-hint">Hake die Pflichtfelder ab bevor du generierst.</p>
+      <button class="primary-btn gold" id="angebot-btn" onclick="generateAngebot()">📄 Angebot jetzt generieren</button>
+    </div>
+  </div>
+
+  <div class="card" id="angebot-result" style="display:none">
+    <div class="sec-head">
+      📄 Ihr Angebot
+      <button class="copy-btn" id="copy-angebot-btn" onclick="copyAngebot()">Kopieren</button>
+    </div>
+    <div class="card-body" id="angebot-result-body"></div>
+  </div>
+</div>
+
+</div><!-- end app -->
+
+<script>
+// ═══════════════════════════════════
+// API wird über Netlify Function aufgerufen
+// Key liegt sicher in Netlify Environment Variables
+// ═══════════════════════════════════
+
+const KACHELN = [
+  {id:"kontakt",icon:"👤",titel:"Kontaktdaten",pflicht:true,felder:["Vor- & Nachname","Telefonnummer","E-Mail-Adresse","Postanschrift"],info:"Vollständige Daten für Angebot & Vertragsversand"},
+  {id:"objekt",icon:"🏢",titel:"Objektdaten",pflicht:true,felder:["Objektadresse","Anzahl Einheiten","Baujahr","Objekttyp (MFH/WEG/EFH)","Wohnfläche gesamt (m²)"],info:"Grundlage für die Kalkulation der Verwaltungsgebühr"},
+  {id:"aktuell",icon:"📋",titel:"Aktuelle Situation",pflicht:true,felder:["Bisheriger Verwalter (ja/nein)","Kündigungsfrist bestehend","Hauptproblem / Anlass","Gewünschter Starttermin"],info:"Wichtig für Übernahme-Planung und Angebotsgestaltung"},
+  {id:"leistung",icon:"⚙️",titel:"Gewünschte Leistungen",pflicht:true,felder:["Kaufmännische Verwaltung","Technische Verwaltung","WEG-Verwaltung","Mietersuche / Vermietung","Buchhaltung & Abrechnung"],info:"Bestimmt Leistungsumfang und Preis"},
+  {id:"mieter",icon:"🔑",titel:"Mieterdaten",pflicht:false,felder:["Anzahl aktuelle Mieter","Leerstandsquote","Offene Mietschulden","Laufende Streitigkeiten"],info:"Für Risikoeinschätzung und Preisgestaltung"},
+  {id:"finanzen",icon:"💶",titel:"Finanzielles",pflicht:false,felder:["Monatliche Gesamtmiete (Soll)","Hausgeldkonto vorhanden","Instandhaltungsrücklage","Budget für Verwaltung (ca.)"],info:"Ermöglicht faire und marktgerechte Kalkulation"},
+  {id:"dokumente",icon:"📁",titel:"Dokumente bereitstellen",pflicht:false,felder:["Grundbuchauszug","Teilungserklärung (WEG)","Aktuelle Mietverträge","Letzte Nebenkostenabrechnung","Energieausweis"],info:"Beschleunigt Angebotserstellung & Vertragsstart"},
+  {id:"sonstiges",icon:"📝",titel:"Besonderheiten",pflicht:false,felder:["Denkmalschutz","Gewerbliche Einheiten","Aufzug vorhanden","Tiefgarage / Stellplätze","Besondere Wünsche"],info:"Individuelle Faktoren die den Preis beeinflussen"}
+];
+
+let checked = {};
+let expandedKachel = "kontakt";
+let emailResult = null;
+let angebotResult = null;
+
+// TABS
+function switchTab(tab) {
+  document.getElementById('page-email').style.display = tab==='email' ? 'flex' : 'none';
+  document.getElementById('page-angebot').style.display = tab==='angebot' ? 'flex' : 'none';
+  document.getElementById('tab-email').className = 'tab-btn ' + (tab==='email'?'active':'inactive');
+  document.getElementById('tab-angebot').className = 'tab-btn ' + (tab==='angebot'?'active':'inactive');
+}
+
+// CHIPS
+function toggleChip(el) {
+  el.classList.toggle('active');
+}
+function getChips() {
+  return [...document.querySelectorAll('.chip.active')].map(c=>c.dataset.val);
+}
+
+// API
+async function callClaude(system, user, maxTokens=1000) {
+  const res = await fetch('/.netlify/functions/claude', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:maxTokens,system,messages:[{role:'user',content:user}]})
+  });
+  const data = await res.json();
+  if(data.error) throw new Error(typeof data.error==='object' ? data.error.message : data.error);
+  const raw = data.content?.map(b=>b.text||'').join('') || '';
+  return JSON.parse(raw.replace(/```json|```/g,'').trim());
+}
+
+// EMAIL GENERATE
+async function generateEmail() {
+  const btn = document.getElementById('email-btn');
+  const resultCard = document.getElementById('email-result');
+  const resultBody = document.getElementById('email-result-body');
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spin" style="width:18px;height:18px;border:2.5px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%"></div> Generiere…';
+  resultCard.style.display = 'block';
+  resultBody.innerHTML = '<div class="loading-center"><div class="spinner-lg spin"></div><p style="font-size:14px">KI schreibt deine E-Mail…</p></div>';
+
+  const name = document.getElementById('e-name').value || 'Interessent';
+  const typ = document.getElementById('e-typ').value;
+  const einheiten = document.getElementById('e-einheiten').value;
+  const ton = document.getElementById('e-ton').value;
+  const laenge = document.getElementById('e-laenge').value;
+  const hinweise = document.getElementById('e-hinweise').value;
+  const chips = getChips().join(', ') || 'Verwaltungsaufwand';
+
+  try {
+    const r = await callClaude(
+      `Du bist Vertriebsexperte für Hausverwaltung. Schreibe überzeugende Angebots-E-Mails auf Deutsch.\nAntworte NUR mit JSON ohne Backticks: {"betreff":"...","email":"..."}\nPersönlicher Einstieg, Schmerzpunkte, konkrete Vorteile, Call-to-Action (kostenlose Erstberatung), Unterschrift: Ihr Hausverwaltungs-Team`,
+      `E-Mail für: ${name}, Typ: ${typ}, Einheiten: ${einheiten}, Probleme: ${chips}, Ton: ${ton}, Länge: ${laenge}${hinweise?`, Hinweise: ${hinweise}`:''}`
+    );
+    emailResult = r;
+    resultBody.innerHTML = `
+      <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+        <span class="badge badge-blue">${typ}</span>
+        <span class="badge badge-gold">${einheiten}</span>
+      </div>
+      <div class="result-betreff-label">Betreff</div>
+      <div class="result-betreff">${r.betreff}</div>
+      <div class="result-body">${r.email.replace(/</g,'&lt;')}</div>
+    `;
+  } catch(e) {
+    resultBody.innerHTML = `<div class="error-box">${e.message}</div>`;
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '✉️ Angebot generieren';
+}
+
+function copyEmail() {
+  if(!emailResult) return;
+  navigator.clipboard.writeText(`Betreff: ${emailResult.betreff}\n\n${emailResult.email}`);
+  const btn = document.getElementById('copy-email-btn');
+  btn.textContent = '✓ Kopiert'; btn.classList.add('done');
+  setTimeout(()=>{btn.textContent='Kopieren';btn.classList.remove('done');},2000);
+}
+
+// KACHELN RENDER
+function renderKacheln() {
+  const container = document.getElementById('kacheln-container');
+  container.innerHTML = '';
+
+  const totalFields = KACHELN.reduce((a,k)=>a+k.felder.length,0);
+  const totalDone = Object.values(checked).filter(Boolean).length;
+  const pct = Math.round((totalDone/totalFields)*100);
+  const allPflicht = KACHELN.filter(k=>k.pflicht).every(k=>k.felder.every(f=>checked[`${k.id}::${f}`]));
+
+  // Update progress
+  document.getElementById('pct-label').textContent = pct+'%';
+  document.getElementById('pct-label').style.color = pct>=60?'#166534':'#c49a1a';
+  document.getElementById('progress-fill').style.width = pct+'%';
+  document.getElementById('progress-fill').style.background = pct>=60?'#22c55e':'#c49a1a';
+  document.getElementById('pct-detail').textContent = `${totalDone} von ${totalFields} Feldern`;
+  const ps = document.getElementById('pflicht-status');
+  ps.textContent = allPflicht ? '✓ Pflichtfelder komplett' : '⚠ Pflichtfelder fehlen';
+  ps.style.color = allPflicht ? '#166534' : '#dc2626';
+  document.getElementById('angebot-hint').textContent = allPflicht ? '✅ Bereit — Angebot kann generiert werden.' : 'Hake die Pflichtfelder ab bevor du generierst.';
+
+  KACHELN.forEach(k => {
+    const done = k.felder.filter(f=>checked[`${k.id}::${f}`]).length;
+    const complete = done===k.felder.length;
+    const open = expandedKachel===k.id;
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.marginBottom = '0';
+
+    // Head
+    const head = document.createElement('div');
+    head.className = 'kachel-head';
+    head.onclick = () => { expandedKachel = open ? null : k.id; renderKacheln(); };
+
+    const iconBg = complete ? '#dcfce7' : (k.pflicht ? '#fefce8' : '#f8fafc');
+    const iconBdr = complete ? '#86efac' : (k.pflicht ? '#fde68a' : '#e2e8f0');
+    head.innerHTML = `
+      <div class="kachel-icon" style="background:${iconBg};border:1px solid ${iconBdr}">${complete?'✅':k.icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+          <span style="font-size:14px;font-weight:700;color:#0f172a">${k.titel}</span>
+          ${k.pflicht?'<span class="badge badge-red">Pflicht</span>':''}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="kachel-mini-bar"><div class="kachel-mini-fill" style="width:${(done/k.felder.length)*100}%;background:${complete?'#22c55e':'#c49a1a'}"></div></div>
+          <span style="font-size:11px;color:#94a3b8;font-weight:600;flex-shrink:0">${done}/${k.felder.length}</span>
+        </div>
+      </div>
+      <span style="color:#94a3b8;font-size:16px;flex-shrink:0">${open?'▲':'▼'}</span>
+    `;
+    card.appendChild(head);
+
+    if(open) {
+      const body = document.createElement('div');
+      body.className = 'kachel-body';
+      const info = document.createElement('div');
+      info.className = 'kachel-info';
+      info.textContent = '💡 ' + k.info;
+      body.appendChild(info);
+
+      const fields = document.createElement('div');
+      fields.className = 'kachel-fields';
+      k.felder.forEach((f, i) => {
+        const isChecked = !!checked[`${k.id}::${f}`];
+        const row = document.createElement('div');
+        row.className = 'field-row';
+        if(i < k.felder.length-1) row.style.borderBottom = '1px solid #e2e8f0';
+        row.onclick = () => {
+          checked[`${k.id}::${f}`] = !checked[`${k.id}::${f}`];
+          renderKacheln();
+        };
+        row.innerHTML = `
+          <div class="checkbox" style="border:2px solid ${isChecked?'#22c55e':'#e2e8f0'};background:${isChecked?'#22c55e':'#fff'}">
+            ${isChecked?'<span style="color:#fff;font-size:14px;font-weight:800">✓</span>':''}
+          </div>
+          <span style="font-size:14px;color:${isChecked?'#94a3b8':'#0f172a'};text-decoration:${isChecked?'line-through':'none'}">${f}</span>
+        `;
+        fields.appendChild(row);
+      });
+      body.appendChild(fields);
+      card.appendChild(body);
+    }
+
+    container.appendChild(card);
+  });
+}
+
+// ANGEBOT GENERATE
+async function generateAngebot() {
+  const btn = document.getElementById('angebot-btn');
+  const resultCard = document.getElementById('angebot-result');
+  const resultBody = document.getElementById('angebot-result-body');
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spin" style="width:18px;height:18px;border:2.5px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%"></div> Generiere Angebot…';
+  resultCard.style.display = 'block';
+  resultBody.innerHTML = '<div class="loading-center"><div class="spinner-lg spin"></div><p style="font-size:14px">KI erstellt professionelles Angebot…</p></div>';
+
+  const daten = KACHELN.map(k=>{
+    const done=k.felder.filter(f=>checked[`${k.id}::${f}`]);
+    return done.length?`${k.titel}: ${done.join(', ')}`:null;
+  }).filter(Boolean).join('\n');
+
+  try {
+    const r = await callClaude(
+      `Du bist Experte für Hausverwaltungsverträge. Erstelle ein professionelles Angebotsdokument auf Deutsch.\nAntworte NUR mit JSON ohne Backticks: {"titel":"...","zusammenfassung":"...","leistungen":["..."],"preis":"...","naechsteSchritte":["..."],"fazit":"..."}\nErstelle ein vollständiges überzeugendes Angebot.`,
+      `Erstelle Angebot basierend auf:\n${daten||'Basis-Hausverwaltungspaket'}`,
+      1500
+    );
+    angebotResult = r;
+
+    const leistHTML = (r.leistungen||[]).map((l,i)=>`
+      <div style="display:flex;gap:10px;padding:7px 0;${i<r.leistungen.length-1?'border-bottom:1px solid #e2e8f0':''}">
+        <span style="color:#22c55e;font-weight:700;flex-shrink:0">✓</span>
+        <span style="font-size:14px;color:#0f172a">${l}</span>
+      </div>`).join('');
+
+    const stepsHTML = (r.naechsteSchritte||[]).map((s,i)=>`
+      <div style="display:flex;gap:10px;padding:7px 0;align-items:flex-start">
+        <div class="step-num">${i+1}</div>
+        <span style="font-size:14px;color:#0f172a;line-height:1.5">${s}</span>
+      </div>`).join('');
+
+    resultBody.innerHTML = `
+      <div style="font-size:18px;font-weight:800;color:#0f172a;line-height:1.3;margin-bottom:10px">${r.titel}</div>
+      <div style="font-size:14px;color:#334155;line-height:1.7;margin-bottom:16px">${r.zusammenfassung}</div>
+      <div class="angebot-section">
+        <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px">Leistungsumfang</div>
+        ${leistHTML}
+      </div>
+      <div class="angebot-section angebot-gold">
+        <div style="font-size:11px;font-weight:700;color:#c49a1a;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">💶 Preisindikation</div>
+        <div style="font-size:14px;color:#0f172a;line-height:1.6">${r.preis}</div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px">Nächste Schritte</div>
+        ${stepsHTML}
+      </div>
+      <div class="angebot-section angebot-blue" style="margin-bottom:0">
+        <div style="font-size:14px;color:#1e40af;line-height:1.6">${r.fazit}</div>
+      </div>
+    `;
+  } catch(e) {
+    resultBody.innerHTML = `<div class="error-box">${e.message}</div>`;
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '📄 Angebot jetzt generieren';
+}
+
+function copyAngebot() {
+  if(!angebotResult) return;
+  const r = angebotResult;
+  const txt = `${r.titel}\n\n${r.zusammenfassung}\n\nLeistungen:\n${(r.leistungen||[]).map(l=>`• ${l}`).join('\n')}\n\nPreis:\n${r.preis}\n\nNächste Schritte:\n${(r.naechsteSchritte||[]).map((s,i)=>`${i+1}. ${s}`).join('\n')}\n\n${r.fazit}`;
+  navigator.clipboard.writeText(txt);
+  const btn = document.getElementById('copy-angebot-btn');
+  btn.textContent = '✓ Kopiert'; btn.classList.add('done');
+  setTimeout(()=>{btn.textContent='Kopieren';btn.classList.remove('done');},2000);
+}
+
+// INIT
+renderKacheln();
+</script>
+</body>
+</html>
